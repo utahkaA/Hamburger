@@ -60,13 +60,34 @@ void parseInput(char **commands, String input, const char* delimiter,
 
 void runCommand(char **cmds) {
   char *partName = cmds[0];
-  char *doWhat = cmds[1];
-  char *value = cmds[2];
-
+  
   if (strcmp(partName, "bun1") == 0) {
+    char *doWhat = cmds[1];
+    
     if (strcmp(doWhat, "select") == 0) {
-      Serial.println("Begin FirstBunSelector Control.");
-      FirstBunSelector.write(atoi(value));
+      int value = atoi(cmds[2]);
+      Serial.println(">>> Started running the first bun selector's servo.");
+      FirstBunSelector.write(value);
+    } else if (strcmp(doWhat, "arm") == 0) {
+      int value = atoi(cmds[2]);
+      int t = atoi(cmds[3]) / 10;
+      
+      Serial.println(">>> Started running the first bun arm's motor.");
+      if (value > 0) {
+        // Serial.println("--- FORWARD ---");
+        FirstBunArm->run(FORWARD);
+      } else if (value < 0) {
+        // Serial.println("--- BACKWARD ---");
+        value *= -1;
+        FirstBunArm->run(BACKWARD);
+      }
+      
+      for (int i = 0; i < t; i++) {
+        FirstBunArm->setSpeed(value);
+        delay(10);
+      }
+      
+      FirstBunArm->run(RELEASE);
     }
   }
 }
@@ -78,8 +99,6 @@ void setup() {
   AFMS.begin();
   BeltConveyorStepper->setSpeed(50);
 
-  FirstBunArm->setSpeed(10);
-  FirstBunArm->run(FORWARD);
   FirstBunArm->run(RELEASE);
 
   FirstBunSelector.attach(FirstBunSelectorPin);
@@ -89,6 +108,8 @@ void setup() {
 void loop() {
   if (Serial.available() > 0) {
     String input = Serial.readStringUntil("\n");
+    Serial.println(input);
+    
     char *commands[MaxCommandLen];
     parseInput(commands, input, delimiter, MaxCommandLen);
     runCommand(commands);
