@@ -10,11 +10,11 @@ Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 
 // Belt Conveyor
 const int steps = 400;
-const int stepperPin = 1;
+const int stepperPin = 2;
 Adafruit_StepperMotor *BeltConveyorStepper = AFMS.getStepper(steps, stepperPin);
 
 // First Bun's Arm
-const int FirstBunArmPin = 3;
+const int FirstBunArmPin = 2;
 Adafruit_DCMotor *FirstBunArm = AFMS.getMotor(FirstBunArmPin);
 
 // First Bun's Selector
@@ -60,19 +60,27 @@ void parseInput(char **commands, String input, const char* delimiter,
 
 void runCommand(char **cmds) {
   char *partName = cmds[0];
+  Serial.println(partName);
+  
+  if (strcmp(partName, "sleep") == 0) {
+    int t = atoi(cmds[1]);
+    delay(t);
+  }
   
   if (strcmp(partName, "bun1") == 0) {
     char *doWhat = cmds[1];
     
     if (strcmp(doWhat, "select") == 0) {
-      int value = atoi(cmds[2]);
       Serial.println(">>> Started running the first bun selector's servo.");
+      
+      int value = atoi(cmds[2]);
       FirstBunSelector.write(value);
     } else if (strcmp(doWhat, "arm") == 0) {
+      Serial.println(">>> Started running the first bun arm's motor.");
+      
       int value = atoi(cmds[2]);
       int t = atoi(cmds[3]) / 10;
-      
-      Serial.println(">>> Started running the first bun arm's motor.");
+      Serial.println(value);
       if (value > 0) {
         // Serial.println("--- FORWARD ---");
         FirstBunArm->run(FORWARD);
@@ -90,6 +98,19 @@ void runCommand(char **cmds) {
       FirstBunArm->run(RELEASE);
     }
   }
+
+  if (strcmp(partName, "belt") == 0) {
+    char *doWhat = cmds[1];
+    int nSteps = atoi(cmds[2]);
+    
+    if (strcmp(doWhat, "go") == 0) {
+      Serial.println(">>> Started running the belt conveyor's stepper. (GO)");
+      BeltConveyorStepper->step(nSteps, BACKWARD, SINGLE);
+    } else if (strcmp(doWhat, "back") == 0) {
+      Serial.println(">>> Started running the belt conveyor's stepper. (BACK)");
+      BeltConveyorStepper->step(nSteps, FORWARD, SINGLE);
+    }
+  }
 }
 
 void setup() {
@@ -102,12 +123,13 @@ void setup() {
   FirstBunArm->run(RELEASE);
 
   FirstBunSelector.attach(FirstBunSelectorPin);
-  FirstBunSelector.write(90);
+  FirstBunSelector.write(0);
 }
 
 void loop() {
   if (Serial.available() > 0) {
-    String input = Serial.readStringUntil("\n");
+    String input = Serial.readStringUntil('\n');
+    delay(100);
     Serial.println(input);
     
     char *commands[MaxCommandLen];
