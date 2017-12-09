@@ -6,6 +6,11 @@
 
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 
+// Belt Conveyor
+const int steps = 400;
+const int stepperPin = 2;
+Adafruit_StepperMotor *BeltConveyorStepper = AFMS.getStepper(steps, stepperPin);
+
 // Cheese Arm's Motor
 const int CheeseArmPin = 1;
 Adafruit_DCMotor *CheeseArm = AFMS.getMotor(CheeseArmPin);
@@ -20,7 +25,7 @@ int angles[] = {0, 36, 72, 108, 144, 180};
 Servo SecondBunSelector;
 
 // Second Bun's Arm
-const int SecondBunArmPin = 4;
+const int SecondBunArmPin = 2;
 Adafruit_DCMotor *SecondBunArm = AFMS.getMotor(SecondBunArmPin);
 
 const unsigned int MaxCommandLen = 8;
@@ -119,6 +124,19 @@ void runCommand(char **cmds) {
       SecondBunArm->run(RELEASE);
     }
   }
+
+  if (strcmp(partName, "belt") == 0) {
+    char *doWhat = cmds[1];
+    int nSteps = atoi(cmds[2]);
+    
+    if (strcmp(doWhat, "go") == 0) {
+      Serial.println(">>> Started running the belt conveyor's stepper. (GO)");
+      BeltConveyorStepper->step(nSteps, FORWARD, SINGLE);
+    } else if (strcmp(doWhat, "back") == 0) {
+      Serial.println(">>> Started running the belt conveyor's stepper. (BACK)");
+      BeltConveyorStepper->step(nSteps, BACKWARD, SINGLE);
+    }
+  }
 }
 
 void setup() {
@@ -126,6 +144,7 @@ void setup() {
   Serial.begin(baudrate);
 
   AFMS.begin();
+  BeltConveyorStepper->setSpeed(50);
   
   CheeseArm->run(RELEASE);
 

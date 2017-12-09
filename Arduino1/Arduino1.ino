@@ -8,11 +8,6 @@
 
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 
-// Belt Conveyor
-const int steps = 400;
-const int stepperPin = 2;
-Adafruit_StepperMotor *BeltConveyorStepper = AFMS.getStepper(steps, stepperPin);
-
 // First Bun's Arm
 const int FirstBunArmPin = 2;
 Adafruit_DCMotor *FirstBunArm = AFMS.getMotor(FirstBunArmPin);
@@ -136,19 +131,6 @@ void runCommand(char **cmds) {
       PattyArm->run(RELEASE);
     }
   }
-
-  if (strcmp(partName, "belt") == 0) {
-    char *doWhat = cmds[1];
-    int nSteps = atoi(cmds[2]);
-    
-    if (strcmp(doWhat, "go") == 0) {
-      Serial.println(">>> Started running the belt conveyor's stepper. (GO)");
-      BeltConveyorStepper->step(nSteps, BACKWARD, SINGLE);
-    } else if (strcmp(doWhat, "back") == 0) {
-      Serial.println(">>> Started running the belt conveyor's stepper. (BACK)");
-      BeltConveyorStepper->step(nSteps, FORWARD, SINGLE);
-    }
-  }
 }
 
 void setup() {
@@ -156,7 +138,6 @@ void setup() {
   Serial.begin(baudrate);
 
   AFMS.begin();
-  BeltConveyorStepper->setSpeed(50);
 
   FirstBunArm->run(RELEASE);
 
