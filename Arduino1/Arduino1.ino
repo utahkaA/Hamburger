@@ -22,7 +22,13 @@ const int FirstBunSelectorPin = 10;
 int angles[] = {0, 36, 72, 108, 144, 180};
 Servo FirstBunSelector;
 
-// Cheese Arm
+// Patty's Arm
+const int PattyArmPin = 1;
+Adafruit_DCMotor *PattyArm = AFMS.getMotor(PattyArmPin);
+
+// Patty's Selector
+const int PattySelectorPin = 9;
+Servo PattySelector;
 
 const unsigned int MaxCommandLen = 8;
 const char delimiter[] = " ";
@@ -99,6 +105,38 @@ void runCommand(char **cmds) {
     }
   }
 
+  if (strcmp(partName, "patty") == 0) {
+    char *doWhat = cmds[1];
+    
+    if (strcmp(doWhat, "select") == 0) {
+      Serial.println(">>> Started running the patty selector's servo.");
+      
+      int value = atoi(cmds[2]);
+      PattySelector.write(value);
+    } else if (strcmp(doWhat, "arm") == 0) {
+      Serial.println(">>> Started running the patty arm's motor.");
+      
+      int value = atoi(cmds[2]);
+      int t = atoi(cmds[3]) / 10;
+      Serial.println(value);
+      if (value > 0) {
+        // Serial.println("--- FORWARD ---");
+        PattyArm->run(FORWARD);
+      } else if (value < 0) {
+        // Serial.println("--- BACKWARD ---");
+        value *= -1;
+        PattyArm->run(BACKWARD);
+      }
+      
+      for (int i = 0; i < t; i++) {
+        PattyArm->setSpeed(value);
+        delay(10);
+      }
+      
+      PattyArm->run(RELEASE);
+    }
+  }
+
   if (strcmp(partName, "belt") == 0) {
     char *doWhat = cmds[1];
     int nSteps = atoi(cmds[2]);
@@ -124,6 +162,11 @@ void setup() {
 
   FirstBunSelector.attach(FirstBunSelectorPin);
   FirstBunSelector.write(0);
+
+  PattyArm->run(RELEASE);
+  
+  PattySelector.attach(PattySelectorPin);
+  PattySelector.write(0);
 }
 
 void loop() {
